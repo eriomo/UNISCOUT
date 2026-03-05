@@ -1,384 +1,208 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from "react";
 
-// ============================================================
-// THEME SYSTEM
-// ============================================================
-const T = {
-  dark: {
-    bg:"#0A0E1A",card:"#111827",accent:"#F59E0B",accentDark:"#D97706",accentLight:"#FCD34D",
-    text:"#F1F5F9",textSec:"#CBD5E1",muted:"#94A3B8",border:"#1E293B",
-    success:"#10B981",danger:"#EF4444",info:"#3B82F6",purple:"#8B5CF6",
-    surface:"#0F172A",inputBg:"#0F172A",shadow:"0 4px 24px rgba(0,0,0,0.3)",
-  },
-  light: {
-    bg:"#F8FAFC",card:"#FFFFFF",accent:"#D97706",accentDark:"#B45309",accentLight:"#F59E0B",
-    text:"#0F172A",textSec:"#334155",muted:"#64748B",border:"#E2E8F0",
-    success:"#059669",danger:"#DC2626",info:"#2563EB",purple:"#7C3AED",
-    surface:"#F1F5F9",inputBg:"#FFFFFF",shadow:"0 4px 24px rgba(0,0,0,0.06)",
+const API = "";
+
+function Logo() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 8,
+          background: "linear-gradient(135deg,#2563eb,#7c3aed)",
+        }}
+      />
+      <strong>UniScout</strong>
+    </div>
+  );
+}
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [mode, setMode] = useState("login");
+  const [view, setView] = useState("search");
+  const [input, setInput] = useState("");
+  const [output, setOutput] = useState("");
+  const [chat, setChat] = useState([]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (stored) setUser(JSON.parse(stored));
+  }, []);
+
+  function login(e) {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    const data = Object.fromEntries(form.entries());
+    localStorage.setItem("user", JSON.stringify(data));
+    setUser(data);
   }
-};
 
-// ============================================================
-// ICONS
-// ============================================================
-const I = ({n,s=20,c})=>{const p={width:s,height:s,viewBox:"0 0 24 24",fill:"none",stroke:c||"currentColor",strokeWidth:"2",style:{display:"inline-flex",flexShrink:0}};const m={
-  search:<svg {...p}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
-  school:<svg {...p}><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5"/></svg>,
-  doc:<svg {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
-  award:<svg {...p}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>,
-  chat:<svg {...p}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
-  calendar:<svg {...p}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-  compare:<svg {...p}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>,
-  resume:<svg {...p}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>,
-  check:<svg {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
-  home:<svg {...p}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-  arrow:<svg {...p}><polyline points="9 18 15 12 9 6"/></svg>,
-  back:<svg {...p}><polyline points="15 18 9 12 15 6"/></svg>,
-  upload:<svg {...p}><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>,
-  mail:<svg {...p}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
-  globe:<svg {...p}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
-  send:<svg {...p}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
-  plus:<svg {...p}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-  x:<svg {...p}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-  dollar:<svg {...p}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
-  user:<svg {...p}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-  sparkle:<svg width={s} height={s} viewBox="0 0 24 24" fill={c||"currentColor"} style={{display:"inline-flex",flexShrink:0}}><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>,
-  sun:<svg {...p}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
-  moon:<svg {...p}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
-  checklist:<svg {...p}><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>,
-  target:<svg {...p}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
-  clock:<svg {...p}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-  mappin:<svg {...p}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
-  briefcase:<svg {...p}><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>,
-};return m[n]||null;};
+  function logout() {
+    localStorage.removeItem("user");
+    setUser(null);
+  }
 
-// ============================================================
-// SHARED COMPONENTS
-// ============================================================
-const Badge=({children,color,t:th})=><span style={{background:(color||th.accent)+"1A",color:color||th.accent,padding:"3px 10px",borderRadius:"20px",fontSize:"12px",fontWeight:"600",display:"inline-block",whiteSpace:"nowrap"}}>{children}</span>;
+  async function searchAI() {
+    const res = await fetch("/api/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: input, profile: user }),
+    });
+    const data = await res.json();
+    setOutput(data.results);
+  }
 
-const Btn=({children,onClick,v="primary",style={},icon,small,t:th,disabled})=>{
-  const base={padding:small?"8px 16px":"12px 24px",borderRadius:"12px",border:"none",cursor:disabled?"not-allowed":"pointer",fontWeight:"600",fontSize:small?"13px":"15px",display:"inline-flex",alignItems:"center",gap:"8px",transition:"all 0.2s",fontFamily:"inherit",opacity:disabled?0.5:1};
-  const vs={primary:{background:`linear-gradient(135deg,${th.accent},${th.accentDark})`,color:"#000"},secondary:{background:th.border,color:th.text},ghost:{background:"transparent",color:th.muted,border:`1px solid ${th.border}`},danger:{background:th.danger+"1A",color:th.danger},success:{background:th.success+"1A",color:th.success}};
-  return <button onClick={disabled?undefined:onClick} style={{...base,...vs[v],...style}}>{icon&&<I n={icon} s={small?14:16}/>}{children}</button>;
-};
+  async function chatAI() {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: input, history: chat }),
+    });
+    const data = await res.json();
+    setChat([...chat, { role: "user", text: input }, { role: "ai", text: data.reply }]);
+    setInput("");
+  }
 
-const Card=({children,style={},onClick,hover,t:th})=>
-  <div onClick={onClick} style={{background:th.card,borderRadius:"16px",border:`1px solid ${th.border}`,padding:"24px",cursor:onClick?"pointer":"default",transition:"all 0.25s",boxShadow:th.shadow,...style}}
-    onMouseEnter={e=>{if(hover||onClick){e.currentTarget.style.borderColor=th.accent+"44";e.currentTarget.style.transform="translateY(-2px)"}}}
-    onMouseLeave={e=>{if(hover||onClick){e.currentTarget.style.borderColor=th.border;e.currentTarget.style.transform="translateY(0)"}}}>{children}</div>;
-
-const Inp=({label,value,onChange,placeholder,type="text",options,textarea,t:th})=>{
-  const s={width:"100%",padding:"12px 16px",borderRadius:"12px",border:`1px solid ${th.border}`,background:th.inputBg,color:th.text,fontSize:"15px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"};
-  return <div style={{marginBottom:"16px"}}>
-    {label&&<label style={{display:"block",color:th.muted,fontSize:"13px",fontWeight:"600",marginBottom:"6px",letterSpacing:"0.5px",textTransform:"uppercase"}}>{label}</label>}
-    {options?<select value={value} onChange={e=>onChange(e.target.value)} style={s}><option value="">{placeholder||"Select..."}</option>{options.map(o=>typeof o==='string'?<option key={o} value={o}>{o}</option>:<option key={o.value} value={o.value}>{o.label}</option>)}</select>
-    :textarea?<textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} rows={4} style={{...s,resize:"vertical"}}/>
-    :<input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={s} onFocus={e=>e.target.style.borderColor=th.accent} onBlur={e=>e.target.style.borderColor=th.border}/>}
-  </div>;
-};
-
-const InfoRow=({label,value,icon,color,t:th})=>
-  <div style={{display:"flex",justifyContent:"space-between",padding:"12px 0",borderBottom:`1px solid ${th.border}`}}>
-    <span style={{color:th.muted,fontSize:"14px",display:"flex",alignItems:"center",gap:"6px"}}>{icon&&<I n={icon} s={14}/>} {label}</span>
-    <span style={{color:color||th.text,fontSize:"14px",fontWeight:"600",textAlign:"right",maxWidth:"60%"}}>{value}</span>
-  </div>;
-
-// ============================================================
-// DATA
-// ============================================================
-const SCHOOLS=[
-  {id:1,name:"University of Toronto",country:"Canada",city:"Toronto, Ontario",ranking:21,acceptance:"43%",tuition:"$45,690 CAD/yr",accommodation:"$12,000–$18,000 CAD/yr",textbooks:"$1,200 CAD/yr",applicationFee:"$180 CAD",deadline:"Jan 15, 2026",programs:["Computer Science","Engineering","Business","Medicine","Data Science","Mathematics"],scholarships:34,description:"Canada's top-ranked university with world-class research facilities and a diverse student body of 90,000+ students from 160+ countries.",payment:"Semester billing (Sept & Jan). Payment plans — 3 monthly installments/semester. Wire, credit card, or Flywire accepted.",costOfLiving:"$1,800–$2,500 CAD/mo",partTime:"Up to 20 hrs/week during studies",email:"admissions@utoronto.ca",phone:"+1 (416) 978-2190",website:"https://utoronto.ca",color:"#1E3A5F",photo:"🏛️",flag:"🇨🇦",requirements:["IELTS 6.5+ / TOEFL 89+","High school transcripts (min 85%)","Personal statement (500-700 words)","2 academic reference letters"],textbookList:[{name:"Calculus: Early Transcendentals",price:"$189",req:true},{name:"Intro to Computing",price:"$145",req:true},{name:"Physics Fundamentals",price:"$165",req:true},{name:"Academic Writing Handbook",price:"$78",req:false}],accommodationOptions:[{name:"Chestnut Residence",type:"Single Room",price:"$14,500/yr",meal:"19 meals/week included",amenities:"WiFi, Gym, Study rooms",distance:"5 min walk"},{name:"New College Residence",type:"Shared Room",price:"$9,800/yr",meal:"No meal plan",amenities:"WiFi, Kitchen, Laundry",distance:"On campus"},{name:"Off-Campus",type:"Shared Apartment",price:"$800–1,200/mo",meal:"Self-catered",amenities:"Varies",distance:"10-30 min transit"}],strengths:["Research","Technology","Business","Medicine"],climate:"Cold winters (-10°C to -20°C), warm summers",language:"English",intlStudents:"25%",employmentRate:"92% within 6 months"},
-  {id:2,name:"University of Melbourne",country:"Australia",city:"Melbourne, Victoria",ranking:33,acceptance:"70%",tuition:"$42,000 AUD/yr",accommodation:"$14,000–$22,000 AUD/yr",textbooks:"$800 AUD/yr",applicationFee:"$100 AUD",deadline:"Oct 31, 2025",programs:["Data Science","Law","Arts","Engineering","Biomedicine","Commerce"],scholarships:28,description:"Australia's #1 university in the world's most liveable city. Known for research excellence and strong industry partnerships.",payment:"Semester billing (Feb & Jul). BPay, credit card, or Convera. OS-HELP loan for eligible students.",costOfLiving:"$1,500–$2,200 AUD/mo",partTime:"Up to 48 hrs/fortnight",email:"admissions@unimelb.edu.au",phone:"+61 3 9035 5511",website:"https://unimelb.edu.au",color:"#0C3B6F",photo:"🎓",flag:"🇦🇺",requirements:["IELTS 6.5+ / TOEFL 79+","Academic transcripts","Personal statement","CV/Resume"],textbookList:[{name:"Data Structures & Algorithms",price:"$120",req:true},{name:"Statistical Learning",price:"$155",req:true},{name:"Linear Algebra",price:"$98",req:true}],accommodationOptions:[{name:"Lincoln Square",type:"Studio",price:"$18,500/yr",meal:"Self-catered",amenities:"Kitchen, WiFi, Gym",distance:"3 min walk"},{name:"International House",type:"Single Room",price:"$15,200/yr",meal:"21 meals/week",amenities:"WiFi, Library",distance:"On campus"},{name:"Off-Campus Share",type:"Shared",price:"$700–1,000/mo",meal:"Self-catered",amenities:"Varies",distance:"15-25 min tram"}],strengths:["Research","Arts","Law","Biomedicine"],climate:"Mild (10°C-25°C), changeable weather",language:"English",intlStudents:"42%",employmentRate:"89% within 4 months"},
-  {id:3,name:"Technical University of Munich",country:"Germany",city:"Munich, Bavaria",ranking:37,acceptance:"8%",tuition:"€0 (FREE!) + €144 semester fee",accommodation:"€5,000–€9,000/yr",textbooks:"€300/yr",applicationFee:"€0",deadline:"May 31, 2026",programs:["Mechanical Engineering","Computer Science","Physics","Architecture","Electrical Engineering"],scholarships:19,description:"Germany's #1 technical university. Tuition completely FREE for ALL students including international. Located in Munich — Germany's tech capital.",payment:"Only €144/semester contribution (includes public transport pass). No tuition for any nationality.",costOfLiving:"€1,000–€1,400/mo",partTime:"120 full days or 240 half days/year",email:"studium@tum.de",phone:"+49 89 289 22245",website:"https://tum.de",color:"#003359",photo:"🔬",flag:"🇩🇪",requirements:["TestDaF 4+ / IELTS 6.5+","APS certificate (some countries)","Bachelor's degree","Motivation letter","GRE recommended"],textbookList:[{name:"Engineering Mechanics",price:"€85",req:true},{name:"Thermodynamics",price:"€92",req:true},{name:"CAD Fundamentals",price:"€45",req:false}],accommodationOptions:[{name:"Studentenwerk Dorm",type:"Single Room",price:"€380/mo",meal:"Mensa nearby (meals from €1.50)",amenities:"WiFi, Kitchen, Laundry",distance:"5-15 min bike"},{name:"Shared Flat (WG)",type:"Shared",price:"€600–900/mo",meal:"Self-catered",amenities:"Full apartment",distance:"10-30 min transit"},{name:"Studio",type:"Private",price:"€900–1,300/mo",meal:"Self-catered",amenities:"Private kitchen/bath",distance:"15-30 min"}],strengths:["Engineering","Technology","Research","Industry"],climate:"Cold winters (0°C to -10°C), pleasant summers",language:"German & English (many master's in English)",intlStudents:"37%",employmentRate:"95% within 3 months"},
-  {id:4,name:"University of Cape Town",country:"South Africa",city:"Cape Town",ranking:160,acceptance:"56%",tuition:"R65,000–R95,000/yr (~$3,500–$5,100 USD)",accommodation:"R45,000–R75,000/yr",textbooks:"R8,000/yr (~$430)",applicationFee:"R100 (~$5.50)",deadline:"Jun 30, 2026",programs:["Medicine","Law","Commerce","Humanities","Engineering","Science"],scholarships:42,description:"Africa's leading university set against Table Mountain. Affordable world-class education with incredible campus life and strong research.",payment:"Annual/semester billing. NSFAS for SA students. International via bank transfer. Payment plans on request.",costOfLiving:"R8,000–R12,000/mo (~$430–$650)",partTime:"Allowed with visa endorsement",email:"admissions@uct.ac.za",phone:"+27 21 650 2128",website:"https://uct.ac.za",color:"#003B5C",photo:"🏔️",flag:"🇿🇦",requirements:["IELTS 7.0+ / TOEFL 90+","National Senior Certificate or equivalent","Certified transcripts","Certified ID/passport copies"],textbookList:[{name:"Principles of Economics",price:"R850 (~$46)",req:true},{name:"Intro to South African Law",price:"R720 (~$39)",req:true},{name:"Biology: Global Approach",price:"R1,100 (~$60)",req:true}],accommodationOptions:[{name:"Smuts Hall",type:"Single Room",price:"R55,000/yr (~$3,000)",meal:"Full meal plan",amenities:"WiFi, Study rooms",distance:"On campus"},{name:"Forest Hill",type:"Shared Room",price:"R42,000/yr (~$2,270)",meal:"Self-catered",amenities:"Kitchen, WiFi",distance:"On campus"},{name:"Off-Campus (Observatory)",type:"Shared Flat",price:"R4,500–6,500/mo",meal:"Self-catered",amenities:"Varies",distance:"10 min shuttle"}],strengths:["Medicine","Research","Social Sciences","Affordability"],climate:"Mediterranean — warm dry summers, mild wet winters",language:"English",intlStudents:"18%",employmentRate:"85% within 6 months"},
-  {id:5,name:"University of Edinburgh",country:"United Kingdom",city:"Edinburgh, Scotland",ranking:22,acceptance:"37%",tuition:"£26,500–£34,800/yr",accommodation:"£6,500–£11,000/yr",textbooks:"£500/yr",applicationFee:"£27.50 (UCAS)",deadline:"Jan 29, 2026",programs:["AI & Machine Learning","Medicine","Literature","Veterinary Science","Informatics","Law"],scholarships:31,description:"One of the world's oldest (est. 1583) and most prestigious universities. Edinburgh's campus is a UNESCO World Heritage Site.",payment:"Semester billing. Bank transfer, credit card, or Flywire. 3 installments/year available.",costOfLiving:"£1,000–£1,400/mo",partTime:"Up to 20 hrs/week during term",email:"sao@ed.ac.uk",phone:"+44 131 650 2035",website:"https://ed.ac.uk",color:"#B01C2E",photo:"🏰",flag:"🇬🇧",requirements:["IELTS 6.5–7.0+","UCAS application + personal statement","Academic reference letter","Predicted/actual grades (AAA-ABB typical)"],textbookList:[{name:"AI: A Modern Approach",price:"£145",req:true},{name:"Pattern Recognition & ML",price:"£120",req:true},{name:"Python Programming",price:"£55",req:false}],accommodationOptions:[{name:"Pollock Halls",type:"Single En-suite",price:"£8,200/yr",meal:"Catered option available",amenities:"WiFi, Gym, Social spaces",distance:"15 min walk"},{name:"Kincaid's Court",type:"Studio",price:"£10,800/yr",meal:"Self-catered",amenities:"Private kitchen, WiFi",distance:"5 min walk"},{name:"Private Flat (Marchmont)",type:"Shared",price:"£550–750/mo",meal:"Self-catered",amenities:"Full kitchen",distance:"10 min walk"}],strengths:["AI & Computing","Medicine","Humanities","Research"],climate:"Cool and wet (5°C-18°C), windy",language:"English",intlStudents:"45%",employmentRate:"93% within 6 months"},
-  {id:6,name:"National University of Singapore",country:"Singapore",city:"Singapore",ranking:8,acceptance:"6%",tuition:"S$37,550/yr (after MOE Grant)",accommodation:"S$3,000–S$6,000/yr",textbooks:"S$600/yr",applicationFee:"S$20",deadline:"Feb 28, 2026",programs:["Business Analytics","Computer Engineering","Law","Biomedical Sciences","Computer Science"],scholarships:25,description:"Asia's #1 university, consistently top 10 globally. Cutting-edge facilities, strong industry connections, multicultural campus.",payment:"Semester billing via GIRO/credit card. MOE Tuition Grant available (3-year work obligation in Singapore).",costOfLiving:"S$1,000–S$1,800/mo",partTime:"Up to 16 hrs/week with Student's Pass",email:"askadmissions@nus.edu.sg",phone:"+65 6516 1010",website:"https://nus.edu.sg",color:"#003D7C",photo:"🌏",flag:"🇸🇬",requirements:["IELTS 6.5+ / TOEFL 85+","Outstanding academic transcripts","SAT/ACT (some faculties)","Interview for selected programs"],textbookList:[{name:"Business Analytics Fundamentals",price:"S$110",req:true},{name:"Data Structures in Java",price:"S$95",req:true},{name:"Discrete Mathematics",price:"S$88",req:true}],accommodationOptions:[{name:"UTown Residence",type:"Single AC Room",price:"S$4,800/yr",meal:"Dining halls nearby",amenities:"AC, WiFi, Gym, Pool",distance:"On campus"},{name:"Prince George's Park",type:"Single Non-AC",price:"S$3,200/yr",meal:"Canteen nearby",amenities:"WiFi, Common areas",distance:"On campus"},{name:"Off-Campus HDB",type:"Shared",price:"S$600–1,000/mo",meal:"Self-catered",amenities:"Full apartment",distance:"15-30 min MRT"}],strengths:["Technology","Business","Engineering","Research"],climate:"Tropical — hot year-round (27°C-33°C)",language:"English",intlStudents:"35%",employmentRate:"94% within 6 months"},
-  {id:7,name:"ETH Zurich",country:"Switzerland",city:"Zurich",ranking:7,acceptance:"27%",tuition:"CHF 1,460/yr (~$1,600 USD!)",accommodation:"CHF 7,000–14,000/yr",textbooks:"CHF 500/yr",applicationFee:"CHF 150",deadline:"Dec 15, 2025",programs:["Computer Science","Physics","Mathematics","Architecture","Mechanical Engineering"],scholarships:15,description:"World's #7 university. 21 Nobel Prize winners including Einstein. Incredibly low tuition even for international students.",payment:"CHF 730/semester via bank transfer. One of the best deals in global education.",costOfLiving:"CHF 1,600–2,200/mo (high but offset by low tuition)",partTime:"Up to 15 hrs/week",email:"admissions@ethz.ch",phone:"+41 44 632 11 11",website:"https://ethz.ch",color:"#1F407A",photo:"⚛️",flag:"🇨🇭",requirements:["Strong STEM record","Comprehensive entrance exam (bachelor's)","TOEFL 100+ / IELTS 7+","GRE for some master's"],textbookList:[{name:"Analysis I & II (ETH)",price:"CHF 60",req:true},{name:"Intro to Machine Learning",price:"CHF 80",req:true},{name:"Physics for Scientists",price:"CHF 95",req:true}],accommodationOptions:[{name:"WOKO Student Housing",type:"Shared Flat",price:"CHF 600–800/mo",meal:"Self-catered",amenities:"Kitchen, WiFi",distance:"10-20 min tram"},{name:"ETH Residence",type:"Single Room",price:"CHF 750–950/mo",meal:"Mensa on campus",amenities:"WiFi, Study rooms",distance:"5 min walk"}],strengths:["STEM","Research","Innovation","Nobel-level"],climate:"Cold winters, warm summers",language:"German & English",intlStudents:"40%",employmentRate:"96% within 3 months"},
-  {id:8,name:"University of British Columbia",country:"Canada",city:"Vancouver, BC",ranking:35,acceptance:"52%",tuition:"$42,800 CAD/yr",accommodation:"$11,000–$16,000 CAD/yr",textbooks:"$1,000 CAD/yr",applicationFee:"$116.25 CAD",deadline:"Jan 15, 2026",programs:["Computer Science","Forestry","Business","Medicine","Environmental Science","Engineering"],scholarships:38,description:"Stunning peninsula campus overlooking the Pacific Ocean. Global leader in sustainability and innovation. Vancouver: one of the world's most liveable cities.",payment:"Semester billing. 3 installments. Wire, credit card, Flywire, Western Union.",costOfLiving:"$1,600–$2,400 CAD/mo",partTime:"Up to 20 hrs/week",email:"international.reception@ubc.ca",phone:"+1 (604) 822-8999",website:"https://ubc.ca",color:"#002145",photo:"🌲",flag:"🇨🇦",requirements:["IELTS 6.5+ / TOEFL 90+","Strong academic record","Personal profile (activities, essays)"],textbookList:[{name:"Intro to Algorithms",price:"$165",req:true},{name:"Environmental Science",price:"$130",req:true}],accommodationOptions:[{name:"Totem Park",type:"Single",price:"$12,500/yr",meal:"Meal plan included",amenities:"WiFi, Kitchen",distance:"On campus"},{name:"Marine Drive",type:"Studio",price:"$15,800/yr",meal:"Self-catered",amenities:"Kitchen, Ocean views",distance:"On campus"}],strengths:["Sustainability","Research","CS","Natural Sciences"],climate:"Mild and rainy, rarely snows, beautiful summers",language:"English",intlStudents:"30%",employmentRate:"90% within 6 months"},
-];
-
-const SCHOLARSHIPS=[
-  {id:1,name:"Chevening Scholarships",country:"UK",amount:"Full tuition + £1,133/mo + flights",deadline:"Nov 5, 2025",website:"chevening.org",email:"info@chevening.org",eligibility:"2+ years work experience, leadership",type:"Full Ride",programs:"Any master's at any UK university"},
-  {id:2,name:"DAAD Scholarship",country:"Germany",amount:"€934/month + travel + insurance",deadline:"Oct 15, 2025",website:"daad.de",email:"info@daad.de",eligibility:"Bachelor's degree, strong academics",type:"Stipend",programs:"Master's/PhD at German universities"},
-  {id:3,name:"Australia Awards",country:"Australia",amount:"Full tuition + living + flights",deadline:"Apr 30, 2026",website:"australiaawards.gov.au",email:"australiaawards@dfat.gov.au",eligibility:"Developing country citizens",type:"Full Ride",programs:"Undergrad, Master's, PhD"},
-  {id:4,name:"Mastercard Foundation Scholars",country:"Multiple",amount:"Full tuition + accommodation + stipend",deadline:"Varies",website:"mastercardfdn.org",email:"scholars@mastercardfdn.org",eligibility:"African students, financial need",type:"Full Ride",programs:"Undergrad & Master's at partners"},
-  {id:5,name:"Fulbright Program",country:"USA",amount:"Full tuition + living + flights",deadline:"Oct 11, 2025",website:"fulbright.org",email:"fulbright@state.gov",eligibility:"Non-US citizens, strong academics",type:"Full Ride",programs:"Master's & PhD at US universities"},
-  {id:6,name:"Erasmus Mundus",country:"Europe",amount:"€1,400/mo + tuition + travel",deadline:"Jan–Mar (varies)",website:"erasmus-plus.ec.europa.eu",email:"eacea-erasmus-mundus@ec.europa.eu",eligibility:"Any nationality, bachelor's degree",type:"Full Ride",programs:"Joint Master's across 2+ EU universities"},
-  {id:7,name:"Commonwealth Scholarships",country:"UK",amount:"Full tuition + airfare + stipend",deadline:"Dec 19, 2025",website:"cscuk.fcdo.gov.uk",email:"info@cscuk.org.uk",eligibility:"Commonwealth country citizens",type:"Full Ride",programs:"Master's & PhD at UK universities"},
-  {id:8,name:"Lester B. Pearson",country:"Canada",amount:"Full tuition + books + housing (4 years!)",deadline:"Nov 30, 2025",website:"future.utoronto.ca/pearson",email:"admissions@utoronto.ca",eligibility:"International students, school nomination",type:"Full Ride",programs:"Any undergrad at U of Toronto"},
-  {id:9,name:"Gates Cambridge",country:"UK",amount:"Full cost of study + living + flights",deadline:"Dec 3, 2025",website:"gatescambridge.org",email:"info@gatescambridge.org",eligibility:"Outstanding academics, leadership",type:"Full Ride",programs:"Any postgrad at Cambridge"},
-  {id:10,name:"Swiss Government Excellence",country:"Switzerland",amount:"CHF 1,920/mo + tuition waiver",deadline:"Nov–Dec (varies)",website:"sbfi.admin.ch",email:"scholarships@sbfi.admin.ch",eligibility:"Postgrad researchers, under 35",type:"Full Ride",programs:"PhD/Postdoc at Swiss universities"},
-];
-
-const VISA={
-  "Canada":{type:"Study Permit",time:"8-12 weeks",cost:"$150 CAD",funds:"$20,635 CAD + tuition",docs:["Acceptance letter from DLI","Proof of funds","Valid passport","Passport photos","Medical exam","Police clearance"],tips:"Apply via IRCC online. Biometrics at VAC. Work 20hrs/week. Post-grad work permit (1-3 years) available."},
-  "Australia":{type:"Student Visa (Subclass 500)",time:"4-6 weeks",cost:"$710 AUD",funds:"$21,041 AUD/yr",docs:["CoE from university","GTE statement","OSHC insurance","Proof of funds","English results","Passport"],tips:"Apply via ImmiAccount. OSHC mandatory entire duration. Work 48hrs/fortnight. Post-study work visa 2-4 years."},
-  "Germany":{type:"National Visa for Study",time:"6-12 weeks",cost:"€75",funds:"€11,208/yr (blocked account)",docs:["Admission letter","Blocked account (Expatrio/Fintiba)","Health insurance","Passport","Motivation letter","Certificates"],tips:"Open blocked account FIRST. Book embassy appointment early. Register at Ausländerbehörde on arrival. 18-month job seeker visa after graduation."},
-  "United Kingdom":{type:"Student Route Visa",time:"3-6 weeks",cost:"£490 + £470/yr IHS",funds:"£1,023/mo × 9 months (28 days in account)",docs:["CAS from university","Proof of funds (28+ days)","Passport","TB test (some countries)","English evidence"],tips:"Apply via gov.uk up to 6 months before. IHS gives NHS access. Graduate Route: 2 years post-study work."},
-  "Singapore":{type:"Student's Pass",time:"2-4 weeks",cost:"S$60",funds:"Proof of sufficient means",docs:["IPA letter via SOLAR","Acceptance letter","Passport","Certificates","Recent photo","eForm 16"],tips:"Applied through SOLAR — very straightforward. Collect pass at ICA within 2 weeks. 16hrs/week work allowed."},
-  "South Africa":{type:"Study Visa",time:"8-12 weeks",cost:"R1,520",funds:"Proof for full duration",docs:["Acceptance letter","Medical certificate","Chest X-ray","Police clearance","Proof of funds","Return ticket/deposit"],tips:"Apply at SA embassy in home country. Medical reports must be recent. Start early — processing can be slow."},
-  "Switzerland":{type:"National Visa D",time:"8-12 weeks",cost:"CHF 88",funds:"CHF 21,000/yr",docs:["Enrollment confirmation","Proof of funds","Passport","CV","Motivation letter","Certificates","Insurance"],tips:"Apply at Swiss embassy 3 months ahead. Register at cantonal office within 14 days. Insurance mandatory (~CHF 300/mo)."},
-};
-
-const COUNTRIES=[...new Set(SCHOOLS.map(s=>s.country))].sort();
-
-const CHECKLISTS={"Canada":["Accept offer on portal","Pay tuition deposit","Apply for Study Permit via IRCC","Book biometrics at VAC","Get immigration medical exam","Apply for housing (first come!)","Apply for scholarships/bursaries","Arrange health insurance","Open Canadian bank account","Book flights once visa approved","Register for orientation","Get SIN on arrival to work legally","Set up phone plan","Join student groups online"],
-"Australia":["Accept offer & get CoE","Purchase OSHC insurance","Apply for Visa (Subclass 500)","Write GTE statement","Apply for accommodation","Get health check if needed","Apply for scholarships","Set up Australian bank account","Book flights","Enrol in courses","Get Australian phone number","Apply for Tax File Number","Get transport card (Opal/Myki)"],
-"Germany":["Accept admission offer","Open blocked account (€11,208)","Get health insurance","Apply for Visa at embassy (book early!)","Apply for Studentenwerk dorm","Get documents certified","Start German language course","Apply for DAAD scholarships","Book flights","Register at Bürgeramt within 2 weeks","Register at Ausländerbehörde","Open German bank account","Get semester ticket (free transit!)","Enrol at university in person"],
-"United Kingdom":["Accept unconditional offer","Pay tuition deposit","Get CAS from university","Apply for Student Route visa","Pay Immigration Health Surcharge","Apply for accommodation","Get TB test if required","Apply for scholarships","Open UK bank account","Book flights","Get BRP from post office within 10 days","Register with local GP","Get transport card","Attend Welcome Week"],
-"Singapore":["Accept offer on portal","Accept/decline MOE Tuition Grant","Apply for Student's Pass via SOLAR","Complete eForm 16","Apply for on-campus housing","Arrange health insurance","Apply for scholarships","Book flights","Collect Student's Pass at ICA","Open bank account (DBS/OCBC/UOB)","Get local SIM card","Register for courses","Attend orientation"],
-"South Africa":["Accept offer & pay registration","Get medical certificate","Get chest X-ray report","Get police clearance","Apply for Study Visa at embassy","Apply for university residence","Apply for financial aid","Arrange medical insurance","Pay repatriation deposit","Open SA bank account","Get local SIM card","Register for courses","Get transport card"],
-"Switzerland":["Accept enrollment","Prove finances (CHF 21,000/yr)","Apply for Visa D at embassy","Arrange Swiss health insurance","Find accommodation (WOKO etc.)","Register at cantonal migration office","Open Swiss bank account","Get SBB Half-Fare card","Register at university","Get Swiss SIM card"]};
-
-// ============================================================
-// PAGES
-// ============================================================
-
-// --- DASHBOARD ---
-function Dashboard({t:th,setPage,setSelectedSchool,profile,savedSchools,applications,getRec}){
-  const rec=getRec().slice(0,4);const has=profile.course||profile.skills||profile.experience;
-  return <div>
-    <h1 style={{fontSize:"32px",fontWeight:"800",color:th.text,margin:0}}>Welcome{profile.name?`, ${profile.name}`:""} 👋</h1>
-    <p style={{color:th.muted,fontSize:"16px",marginTop:"6px",marginBottom:"24px"}}>{has?"Schools matched to your profile":"Complete your profile to get personalized recommendations"}</p>
-    {!has&&<Card t={th} style={{marginBottom:"20px",background:`linear-gradient(135deg,${th.accent}15,${th.purple}15)`,borderColor:th.accent+"33"}}><div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><div><h3 style={{color:th.text,margin:"0 0 4px",fontSize:"16px"}}>🎯 Get Personalized Recommendations</h3><p style={{color:th.muted,margin:0,fontSize:"14px"}}>Add your resume and preferences to your profile — we'll match schools automatically.</p></div><Btn t={th} onClick={()=>setPage("profile")} icon="user">Complete Profile</Btn></div></Card>}
-    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"14px",marginBottom:"24px"}}>
-      {[{l:"Schools Saved",v:savedSchools.length,i:"school",c:th.accent},{l:"Applications",v:applications.length,i:"doc",c:th.info},{l:"Scholarships",v:SCHOLARSHIPS.length,i:"award",c:th.success},{l:"Deadlines",v:4,i:"calendar",c:th.danger}].map((s,i)=><Card key={i} t={th} style={{textAlign:"center",padding:"18px"}}><div style={{color:s.c,marginBottom:"6px"}}><I n={s.i} s={24}/></div><div style={{fontSize:"26px",fontWeight:"800",color:th.text}}>{s.v}</div><div style={{fontSize:"12px",color:th.muted}}>{s.l}</div></Card>)}
-    </div>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"14px"}}><h2 style={{fontSize:"20px",fontWeight:"700",color:th.text,margin:0}}>{has?"🎯 Matched For You":"🌍 Popular Schools"}</h2><Btn t={th} small v="ghost" onClick={()=>setPage("schools")} icon="arrow">View All</Btn></div>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"14px",marginBottom:"24px"}}>
-      {rec.map(s=><Card key={s.id} t={th} onClick={()=>{setSelectedSchool(s);setPage("detail")}} hover><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{display:"flex",gap:"12px",alignItems:"center"}}><div style={{width:"50px",height:"50px",borderRadius:"14px",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px"}}>{s.photo}</div><div><div style={{fontWeight:"700",color:th.text,fontSize:"15px"}}>{s.name}</div><div style={{color:th.muted,fontSize:"13px"}}>{s.flag} {s.city}</div></div></div><div style={{textAlign:"right"}}><Badge t={th}>#{s.ranking}</Badge>{s.matchScore>50&&has&&<div style={{color:th.success,fontSize:"11px",fontWeight:"700",marginTop:"4px"}}>🔥 Strong Match</div>}</div></div><div style={{display:"flex",gap:"6px",marginTop:"10px",flexWrap:"wrap"}}><Badge t={th} color={th.success}>{s.tuition}</Badge><Badge t={th} color={th.info}>{s.acceptance} accept</Badge></div></Card>)}
-    </div>
-    <h2 style={{fontSize:"20px",fontWeight:"700",color:th.text,marginBottom:"14px"}}>⚡ Quick Actions</h2>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"12px"}}>
-      {[{l:"Find Scholarships",i:"award",p:"scholarships",c:th.success},{l:"Draft a Letter",i:"doc",p:"letters",c:th.info},{l:"Build Resume",i:"resume",p:"resume",c:th.purple},{l:"Ask AI Advisor",i:"chat",p:"advisor",c:th.accent}].map((a,i)=><Card key={i} t={th} onClick={()=>setPage(a.p)} hover style={{padding:"18px",textAlign:"center"}}><div style={{color:a.c,marginBottom:"6px"}}><I n={a.i} s={22}/></div><div style={{color:th.text,fontWeight:"600",fontSize:"13px"}}>{a.l}</div></Card>)}
-    </div>
-  </div>;
-}
-
-// --- SCHOOLS LIST ---
-function SchoolsPage({t:th,setPage,setSelectedSchool,savedSchools,setSavedSchools,getRec}){
-  const[search,setSearch]=useState("");const[country,setCountry]=useState("");const[sort,setSort]=useState("match");
-  let filtered=getRec().filter(s=>{const q=search.toLowerCase();return(!search||s.name.toLowerCase().includes(q)||s.programs.some(p=>p.toLowerCase().includes(q))||s.city.toLowerCase().includes(q))&&(!country||s.country===country)});
-  if(sort==="ranking")filtered.sort((a,b)=>a.ranking-b.ranking);
-  return <div>
-    <h1 style={{fontSize:"32px",fontWeight:"800",color:th.text,margin:"0 0 6px"}}>Explore Schools</h1>
-    <p style={{color:th.muted,marginBottom:"16px"}}>Find the perfect university for you</p>
-    <Card t={th} style={{marginBottom:"16px",padding:"18px"}}><div style={{display:"flex",gap:"12px",alignItems:"flex-end",flexWrap:"wrap"}}><div style={{flex:2,minWidth:"200px"}}><Inp t={th} label="Search" value={search} onChange={setSearch} placeholder="School name, program, city..."/></div><div style={{flex:1,minWidth:"140px"}}><Inp t={th} label="Country" value={country} onChange={setCountry} options={COUNTRIES}/></div><div style={{flex:1,minWidth:"120px"}}><Inp t={th} label="Sort" value={sort} onChange={setSort} options={[{value:"match",label:"Best Match"},{value:"ranking",label:"Ranking"}]}/></div></div></Card>
-    <p style={{color:th.muted,fontSize:"14px",marginBottom:"14px"}}>{filtered.length} schools found</p>
-    <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
-      {filtered.map(s=><Card key={s.id} t={th} hover onClick={()=>{setSelectedSchool(s);setPage("detail")}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div style={{display:"flex",gap:"14px",flex:1}}>
-            <div style={{width:"64px",height:"64px",borderRadius:"16px",background:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"32px",flexShrink:0}}>{s.photo}</div>
-            <div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap",marginBottom:"4px"}}><span style={{fontWeight:"700",color:th.text,fontSize:"17px"}}>{s.name}</span><Badge t={th}>#{s.ranking}</Badge>{s.matchScore>50&&<Badge t={th} color={th.success}>🔥 Match</Badge>}</div><div style={{color:th.muted,fontSize:"14px",marginBottom:"6px"}}>{s.flag} {s.city}, {s.country}</div><p style={{color:th.muted,fontSize:"14px",margin:"0 0 8px",lineHeight:"1.5",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{s.description}</p><div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>{s.programs.slice(0,3).map(p=><Badge key={p} t={th} color={th.purple}>{p}</Badge>)}{s.programs.length>3&&<Badge t={th} color={th.muted}>+{s.programs.length-3}</Badge>}</div></div>
-          </div>
-          <div style={{textAlign:"right",flexShrink:0,marginLeft:"14px"}}><div style={{color:th.accent,fontWeight:"800",fontSize:"15px"}}>{s.tuition}</div><div style={{color:th.muted,fontSize:"12px",marginTop:"4px"}}>Accept: {s.acceptance}</div><div style={{color:th.muted,fontSize:"12px"}}>{s.scholarships} scholarships</div><Btn t={th} small v={savedSchools.includes(s.id)?"success":"ghost"} style={{marginTop:"8px"}} onClick={e=>{e.stopPropagation();setSavedSchools(p=>p.includes(s.id)?p.filter(x=>x!==s.id):[...p,s.id])}} icon={savedSchools.includes(s.id)?"check":"plus"}>{savedSchools.includes(s.id)?"Saved":"Save"}</Btn></div>
+  if (!user) {
+    return (
+      <div style={authWrapper}>
+        <div style={authCard}>
+          <Logo />
+          <h2>{mode === "login" ? "Login" : "Sign Up"}</h2>
+          <form onSubmit={login} style={{ width: "100%" }}>
+            <input name="name" placeholder="Name" required style={inputStyle} />
+            <input name="email" placeholder="Email" required style={inputStyle} />
+            <input type="password" name="password" placeholder="Password" required style={inputStyle} />
+            <button style={buttonStyle}>Continue</button>
+          </form>
+          <p onClick={() => setMode(mode === "login" ? "signup" : "login")} style={{ cursor: "pointer" }}>
+            {mode === "login" ? "Create account" : "Already have account"}
+          </p>
         </div>
-      </Card>)}
-    </div>
-  </div>;
-}
-
-// --- SCHOOL DETAIL ---
-function SchoolDetail({school:s,t:th,setPage,savedSchools,setSavedSchools,applications,setApplications}){
-  const[tab,setTab]=useState("overview");if(!s)return null;
-  const saved=savedSchools.includes(s.id);const applied=applications.some(a=>a.schoolId===s.id);const visa=VISA[s.country];
-  const tabs=[{id:"overview",l:"📋 Overview"},{id:"costs",l:"💰 Costs"},{id:"housing",l:"🏠 Housing"},{id:"reqs",l:"📝 Requirements"},{id:"visa",l:"✈️ Visa"},{id:"contact",l:"📞 Contact"}];
-  return <div>
-    <button onClick={()=>setPage("schools")} style={{background:"none",border:"none",color:th.accent,cursor:"pointer",fontSize:"14px",fontWeight:"600",display:"flex",alignItems:"center",gap:"4px",padding:0,marginBottom:"14px",fontFamily:"inherit"}}><I n="back" s={16}/> Back</button>
-    <Card t={th} style={{marginBottom:"18px",background:`linear-gradient(135deg,${s.color}CC,${th.card})`}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:"14px"}}>
-        <div style={{display:"flex",gap:"16px",alignItems:"center"}}><div style={{width:"72px",height:"72px",borderRadius:"18px",background:"rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"38px"}}>{s.photo}</div><div><h1 style={{fontSize:"26px",fontWeight:"800",color:"#fff",margin:"0 0 4px"}}>{s.name}</h1><p style={{color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>{s.flag} {s.city}, {s.country}</p><div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}><Badge t={th}>#{s.ranking} World</Badge><Badge t={th} color={th.success}>{s.acceptance} Accept</Badge><Badge t={th} color={th.info}>{s.scholarships} Scholarships</Badge></div></div></div>
-        <div style={{display:"flex",gap:"8px"}}><Btn t={th} v={saved?"success":"secondary"} icon={saved?"check":"plus"} onClick={()=>setSavedSchools(p=>p.includes(s.id)?p.filter(x=>x!==s.id):[...p,s.id])}>{saved?"Saved":"Save"}</Btn>{!applied?<Btn t={th} icon="doc" onClick={()=>setApplications(p=>[...p,{schoolId:s.id,name:s.name,status:"In Progress",date:new Date().toLocaleDateString(),progress:15,country:s.country}])}>Start Application</Btn>:<Btn t={th} v="success" icon="check">Applied</Btn>}</div>
       </div>
-    </Card>
-    <div style={{display:"flex",gap:"2px",marginBottom:"18px",borderBottom:`1px solid ${th.border}`,overflowX:"auto"}}>{tabs.map(tb=><button key={tb.id} onClick={()=>setTab(tb.id)} style={{background:"none",border:"none",color:tab===tb.id?th.accent:th.muted,fontSize:"14px",fontWeight:"600",padding:"10px 16px",cursor:"pointer",fontFamily:"inherit",borderBottom:tab===tb.id?`2px solid ${th.accent}`:"2px solid transparent",whiteSpace:"nowrap"}}>{tb.l}</button>)}</div>
+    );
+  }
 
-    {tab==="overview"&&<div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:"16px"}}>
-      <div><Card t={th} style={{marginBottom:"14px"}}><h3 style={{color:th.text,marginTop:0}}>About</h3><p style={{color:th.muted,lineHeight:1.7}}>{s.description}</p></Card><Card t={th}><h3 style={{color:th.text,marginTop:0}}>Programs</h3><div style={{display:"flex",flexWrap:"wrap",gap:"6px"}}>{s.programs.map(p=><Badge key={p} t={th} color={th.purple}>{p}</Badge>)}</div></Card></div>
-      <Card t={th}><h3 style={{color:th.text,marginTop:0}}>Quick Facts</h3><InfoRow t={th} label="Tuition" value={s.tuition} icon="dollar" color={th.accent}/><InfoRow t={th} label="Application Fee" value={s.applicationFee} icon="doc"/><InfoRow t={th} label="Deadline" value={s.deadline} icon="calendar" color={th.danger}/><InfoRow t={th} label="Cost of Living" value={s.costOfLiving} icon="home"/><InfoRow t={th} label="Part-Time Work" value={s.partTime} icon="briefcase"/>{s.language&&<InfoRow t={th} label="Language" value={s.language} icon="globe"/>}{s.climate&&<InfoRow t={th} label="Climate" value={s.climate} icon="sun"/>}{s.employmentRate&&<InfoRow t={th} label="Employment" value={s.employmentRate} icon="target" color={th.success}/>}</Card>
-    </div>}
+  return (
+    <div style={appWrapper}>
+      <header style={headerStyle}>
+        <Logo />
+        <div>
+          <button onClick={() => setView("search")} style={navBtn}>Search</button>
+          <button onClick={() => setView("chat")} style={navBtn}>Advisor</button>
+          <button onClick={logout} style={navBtn}>Logout</button>
+        </div>
+      </header>
 
-    {tab==="costs"&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"}}>
-      <Card t={th}><h3 style={{color:th.text,marginTop:0}}>💰 Full Cost Breakdown</h3>{[{l:"Tuition",v:s.tuition},{l:"Accommodation",v:s.accommodation},{l:"Textbooks",v:s.textbooks},{l:"Application Fee",v:s.applicationFee},{l:"Monthly Living",v:s.costOfLiving}].map((c,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"12px 0",borderBottom:`1px solid ${th.border}`}}><span style={{color:th.muted}}>{c.l}</span><span style={{color:th.accent,fontWeight:"700"}}>{c.v}</span></div>)}</Card>
-      <div><Card t={th} style={{marginBottom:"14px"}}><h3 style={{color:th.text,marginTop:0}}>Payment Plan</h3><p style={{color:th.muted,lineHeight:1.7}}>{s.payment}</p></Card><Card t={th}><h3 style={{color:th.text,marginTop:0}}>📚 Textbooks</h3>{s.textbookList.map((b,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:i<s.textbookList.length-1?`1px solid ${th.border}`:"none"}}><div><div style={{color:th.text,fontSize:"14px"}}>{b.name}</div><span style={{color:b.req?th.danger:th.success,fontSize:"12px"}}>{b.req?"Required":"Optional"}</span></div><span style={{color:th.accent,fontWeight:"600",fontSize:"14px"}}>{b.price}</span></div>)}</Card></div>
-    </div>}
-
-    {tab==="housing"&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"14px"}}>{s.accommodationOptions.map((a,i)=><Card key={i} t={th} hover><div style={{fontSize:"30px",marginBottom:"10px"}}>🏠</div><h3 style={{color:th.text,marginTop:0,fontSize:"16px"}}>{a.name}</h3><Badge t={th} color={th.purple}>{a.type}</Badge><div style={{marginTop:"14px"}}>{[{l:"Price",v:a.price,c:th.accent},{l:"Meals",v:a.meal},{l:"Amenities",v:a.amenities},{l:"Distance",v:a.distance}].map((f,j)=><div key={j} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${th.border}`}}><span style={{color:th.muted,fontSize:"13px"}}>{f.l}</span><span style={{color:f.c||th.text,fontWeight:f.c?"700":"500",fontSize:"13px",textAlign:"right",maxWidth:"55%"}}>{f.v}</span></div>)}</div></Card>)}</div>}
-
-    {tab==="reqs"&&<Card t={th}><h3 style={{color:th.text,marginTop:0}}>Admission Requirements</h3><div style={{display:"flex",flexDirection:"column",gap:"10px"}}>{s.requirements.map((r,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:"12px",padding:"12px 16px",background:th.surface,borderRadius:"12px"}}><div style={{width:"28px",height:"28px",borderRadius:"50%",background:th.accent+"1A",color:th.accent,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",fontWeight:"700",flexShrink:0}}>{i+1}</div><span style={{color:th.text}}>{r}</span></div>)}</div><div style={{marginTop:"18px",display:"flex",gap:"8px"}}><Btn t={th} icon="doc" onClick={()=>setPage("letters")}>Draft Letter</Btn><Btn t={th} v="secondary" icon="resume" onClick={()=>setPage("resume")}>Build Resume</Btn></div></Card>}
-
-    {tab==="visa"&&visa&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"}}>
-      <Card t={th}><h3 style={{color:th.text,marginTop:0}}>✈️ Visa — {s.country}</h3><InfoRow t={th} label="Type" value={visa.type} icon="doc"/><InfoRow t={th} label="Processing" value={visa.time} icon="clock"/><InfoRow t={th} label="Cost" value={visa.cost} icon="dollar"/><InfoRow t={th} label="Proof of Funds" value={visa.funds} icon="dollar" color={th.accent}/></Card>
-      <div><Card t={th} style={{marginBottom:"14px"}}><h3 style={{color:th.text,marginTop:0}}>📄 Required Documents</h3>{visa.docs.map((d,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:"8px",padding:"6px 0",color:th.muted}}><span style={{color:th.success}}><I n="check" s={14}/></span> {d}</div>)}</Card><Card t={th}><h3 style={{color:th.text,marginTop:0}}>💡 Tips</h3><p style={{color:th.muted,lineHeight:1.7,fontSize:"14px"}}>{visa.tips}</p></Card></div>
-    </div>}
-
-    {tab==="contact"&&<Card t={th}><h3 style={{color:th.text,marginTop:0}}>📞 Admissions — Direct Contact</h3><p style={{color:th.muted,marginBottom:"16px"}}>Contact the university directly — no agents, no middlemen.</p><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}}>{[{l:"Email",v:s.email,i:"mail"},{l:"Phone",v:s.phone,i:"chat"},{l:"Website",v:s.website,i:"globe"},{l:"Deadline",v:s.deadline,i:"calendar"},{l:"Application Fee",v:s.applicationFee,i:"dollar"},{l:"Location",v:`${s.city}, ${s.country}`,i:"mappin"}].map((c,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px",background:th.surface,borderRadius:"12px"}}><div style={{color:th.accent}}><I n={c.i} s={20}/></div><div><div style={{color:th.muted,fontSize:"12px",textTransform:"uppercase",letterSpacing:"0.5px"}}>{c.l}</div><div style={{color:th.text,fontWeight:"600",fontSize:"14px",wordBreak:"break-all"}}>{c.v}</div></div></div>)}</div></Card>}
-  </div>;
-}
-
-// --- SCHOLARSHIPS ---
-function ScholarshipsPage({t:th}){
-  const[filter,setFilter]=useState("");const[search,setSearch]=useState("");
-  const countries=[...new Set(SCHOLARSHIPS.map(s=>s.country))].sort();
-  const filtered=SCHOLARSHIPS.filter(s=>(!filter||s.country===filter)&&(!search||s.name.toLowerCase().includes(search.toLowerCase())||s.eligibility.toLowerCase().includes(search.toLowerCase())));
-  return <div>
-    <h1 style={{fontSize:"32px",fontWeight:"800",color:th.text,margin:"0 0 6px"}}>Scholarships & Funding</h1>
-    <p style={{color:th.muted,marginBottom:"16px"}}>Direct emails and contacts — no agents, no scams</p>
-    <Card t={th} style={{marginBottom:"14px",padding:"14px"}}><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search scholarships..." style={{width:"100%",padding:"10px 14px",borderRadius:"10px",border:`1px solid ${th.border}`,background:th.inputBg,color:th.text,fontSize:"15px",fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/></Card>
-    <div style={{display:"flex",gap:"6px",marginBottom:"16px",flexWrap:"wrap"}}>{["",... countries].map(c=><Btn key={c} t={th} small v={filter===c?"primary":"ghost"} onClick={()=>setFilter(c)}>{c||"All"}</Btn>)}</div>
-    <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
-      {filtered.map(s=><Card key={s.id} t={th} hover><div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px",flexWrap:"wrap"}}><span style={{fontWeight:"700",color:th.text,fontSize:"18px"}}>{s.name}</span><Badge t={th} color={s.type==="Full Ride"?th.success:th.info}>{s.type}</Badge></div><div style={{display:"flex",gap:"14px",marginBottom:"8px",flexWrap:"wrap",fontSize:"14px"}}><span style={{color:th.muted}}>🌍 {s.country}</span><span style={{color:th.accent,fontWeight:"600"}}>💰 {s.amount}</span><span style={{color:th.danger}}>📅 {s.deadline}</span></div><p style={{color:th.textSec,fontSize:"14px",margin:"0 0 4px"}}><strong style={{color:th.text}}>Eligibility:</strong> {s.eligibility}</p><p style={{color:th.textSec,fontSize:"14px",margin:"0 0 10px"}}><strong style={{color:th.text}}>Programs:</strong> {s.programs}</p><div style={{display:"flex",gap:"16px",flexWrap:"wrap"}}><span style={{color:th.info,fontSize:"14px",display:"flex",alignItems:"center",gap:"6px"}}><I n="mail" s={14}/> {s.email}</span><span style={{color:th.info,fontSize:"14px",display:"flex",alignItems:"center",gap:"6px"}}><I n="globe" s={14}/> {s.website}</span></div></Card>)}
+      <main style={mainStyle}>
+        <textarea
+          style={textareaStyle}
+          placeholder="Ask anything about universities worldwide..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        />
+        {view === "search" ? (
+          <button style={buttonStyle} onClick={searchAI}>Search Universities</button>
+        ) : (
+          <button style={buttonStyle} onClick={chatAI}>Ask Advisor</button>
+        )}
+        <div style={outputStyle}>
+          {view === "search"
+            ? output
+            : chat.map((c, i) => (
+                <div key={i}>
+                  <strong>{c.role === "user" ? "You" : "AI"}:</strong>
+                  <p>{c.text}</p>
+                </div>
+              ))}
+        </div>
+      </main>
     </div>
-  </div>;
+  );
 }
 
-// --- APPLICATION TRACKER ---
-function AppTracker({t:th,applications,setApplications,setPage}){
-  const sts=["In Progress","Documents Gathering","Submitted","Under Review","Accepted","Rejected"];
-  const stColors={"In Progress":"#F59E0B","Documents Gathering":"#8B5CF6","Submitted":"#3B82F6","Under Review":"#6366F1","Accepted":"#10B981","Rejected":"#EF4444"};
-  if(!applications.length)return <div><h1 style={{fontSize:"32px",fontWeight:"800",color:th.text,margin:"0 0 20px"}}>Application Tracker</h1><Card t={th} style={{textAlign:"center",padding:"60px"}}><div style={{fontSize:"48px",marginBottom:"14px"}}>📋</div><h3 style={{color:th.text}}>No applications yet</h3><p style={{color:th.muted,marginBottom:"14px"}}>Visit a school and click "Start Application"</p><Btn t={th} onClick={()=>setPage("schools")} icon="school">Explore Schools</Btn></Card></div>;
-  return <div><h1 style={{fontSize:"32px",fontWeight:"800",color:th.text,margin:"0 0 20px"}}>Application Tracker</h1><div style={{display:"flex",flexDirection:"column",gap:"12px"}}>{applications.map((a,i)=><Card key={i} t={th}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"12px"}}><div><div style={{fontWeight:"700",color:th.text,fontSize:"18px"}}>{a.name}</div><div style={{color:th.muted,fontSize:"13px",marginTop:"4px"}}>Started: {a.date}</div></div><div style={{display:"flex",gap:"8px"}}><select value={a.status} onChange={e=>{const u=[...applications];u[i].status=e.target.value;u[i].progress=Math.min((sts.indexOf(e.target.value)+1)*20,100);setApplications(u)}} style={{padding:"8px 12px",borderRadius:"8px",border:`1px solid ${th.border}`,background:th.inputBg,color:th.text,fontFamily:"inherit"}}>{sts.map(s=><option key={s} value={s}>{s}</option>)}</select><Btn t={th} small v="danger" icon="x" onClick={()=>setApplications(p=>p.filter((_,idx)=>idx!==i))}>Remove</Btn></div></div><div><div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}><span style={{color:stColors[a.status]||th.muted,fontSize:"13px",fontWeight:"600"}}>{a.status}</span><span style={{color:th.accent,fontSize:"13px",fontWeight:"600"}}>{Math.min(a.progress,100)}%</span></div><div style={{height:"6px",borderRadius:"3px",background:th.border}}><div style={{height:"100%",borderRadius:"3px",width:`${Math.min(a.progress,100)}%`,background:`linear-gradient(90deg,${stColors[a.status]||th.accent},${th.accentLight})`,transition:"width 0.4s"}}/></div></div></Card>)}</div></div>;
-}
+/* STYLES */
 
-// --- COMPARE ---
-function ComparePage({t:th,savedSchools,setPage}){
-  const schools=SCHOOLS.filter(s=>savedSchools.includes(s.id));
-  const fields=[{l:"Country",k:"country"},{l:"Tuition",k:"tuition"},{l:"Accommodation",k:"accommodation"},{l:"Textbooks",k:"textbooks"},{l:"Ranking",k:"ranking",f:v=>`#${v}`},{l:"Acceptance",k:"acceptance"},{l:"Application Fee",k:"applicationFee"},{l:"Living Cost",k:"costOfLiving"},{l:"Part-Time Work",k:"partTime"},{l:"Language",k:"language"},{l:"Int'l Students",k:"intlStudents"},{l:"Employment",k:"employmentRate"},{l:"Climate",k:"climate"},{l:"Deadline",k:"deadline"},{l:"Scholarships",k:"scholarships",f:v=>`${v} available`}];
-  if(schools.length<2)return <div><h1 style={{fontSize:"32px",fontWeight:"800",color:th.text,margin:"0 0 20px"}}>Compare Schools</h1><Card t={th} style={{textAlign:"center",padding:"60px"}}><div style={{fontSize:"48px",marginBottom:"14px"}}>⚖️</div><h3 style={{color:th.text}}>Save at least 2 schools to compare</h3><Btn t={th} onClick={()=>setPage("schools")} icon="school" style={{marginTop:"14px"}}>Explore Schools</Btn></Card></div>;
-  return <div><h1 style={{fontSize:"32px",fontWeight:"800",color:th.text,margin:"0 0 20px"}}>Compare Schools</h1><div style={{overflowX:"auto",borderRadius:"16px",border:`1px solid ${th.border}`}}><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{padding:"14px",textAlign:"left",color:th.muted,fontSize:"13px",background:th.card,borderBottom:`1px solid ${th.border}`}}></th>{schools.map(s=><th key={s.id} style={{padding:"14px",textAlign:"center",borderBottom:`1px solid ${th.border}`,background:th.card,minWidth:"180px"}}><div style={{fontSize:"26px",marginBottom:"4px"}}>{s.photo}</div><div style={{color:th.text,fontWeight:"700",fontSize:"14px"}}>{s.name}</div><div style={{color:th.muted,fontSize:"12px"}}>{s.flag} {s.country}</div></th>)}</tr></thead><tbody>{fields.map((f,i)=><tr key={f.k}><td style={{padding:"10px 14px",color:th.muted,fontWeight:"600",fontSize:"13px",background:i%2===0?th.surface:th.card}}>{f.l}</td>{schools.map(s=><td key={s.id} style={{padding:"10px 14px",textAlign:"center",color:th.text,fontSize:"13px",background:i%2===0?th.surface:th.card}}>{f.f?f.f(s[f.k]):(s[f.k]||"—")}</td>)}</tr>)}</tbody></table></div></div>;
-}
+const authWrapper = {
+  minHeight: "100vh",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  padding: 20,
+  background: "#f3f4f6",
+};
 
-// --- LETTER DRAFTER ---
-function LetterDrafter({t:th,profile}){
-  const[form,setForm]=useState({school:"",program:"",name:profile.name||"",background:profile.education||"",why:"",strengths:profile.skills||"",type:"sop"});
-  const[gen,setGen]=useState("");const[loading,setLoading]=useState(false);const set=(k,v)=>setForm({...form,[k]:v});
-  const generate=()=>{setLoading(true);setTimeout(()=>{const f=form;setGen(`Dear Admissions Committee,\n\nI am writing to express my deep interest in the ${f.program||"[Program]"} program at ${f.school||"[University]"}. My name is ${f.name||"[Your Name]"}, and I am confident that my background has prepared me for this opportunity.\n\n${f.background?`My educational journey has been shaped by ${f.background}. These experiences have given me a strong foundation and fueled my desire to pursue advanced study.`:"Throughout my academic career, I have demonstrated intellectual curiosity and commitment to excellence."}\n\n${f.why||`I am drawn to ${f.school||"your institution"} because of its outstanding reputation, innovative curriculum, and the opportunity to learn from world-class faculty.`}\n\n${f.strengths?`Among my key strengths, I bring ${f.strengths}. These qualities position me to make meaningful contributions to your program.`:"I bring strong analytical skills, creativity, and a collaborative spirit to everything I pursue."}\n\nI am enthusiastic about joining ${f.school||"your institution"} and confident the experience will enable me to make a meaningful impact.\n\nSincerely,\n${f.name||"[Your Name]"}`);setLoading(false)},1200)};
-  return <div><h1 style={{fontSize:"32px",fontWeight:"800",color:th.text,margin:"0 0 20px"}}>AI Letter Drafter</h1><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"18px"}}><Card t={th}><h3 style={{color:th.text,marginTop:0}}>✍️ Details</h3><Inp t={th} label="Type" value={form.type} onChange={v=>set("type",v)} options={[{value:"sop",label:"Personal Statement / SOP"},{value:"motivation",label:"Motivation Letter"},{value:"cover",label:"Cover Letter"}]}/><Inp t={th} label="Your Name" value={form.name} onChange={v=>set("name",v)} placeholder="Full name"/><Inp t={th} label="Target School" value={form.school} onChange={v=>set("school",v)} placeholder="University of Toronto"/><Inp t={th} label="Program" value={form.program} onChange={v=>set("program",v)} placeholder="Computer Science"/><Inp t={th} label="Background" value={form.background} onChange={v=>set("background",v)} placeholder="Your education & experience..." textarea/><Inp t={th} label="Why this school?" value={form.why} onChange={v=>set("why",v)} placeholder="What draws you?" textarea/><Inp t={th} label="Key Strengths" value={form.strengths} onChange={v=>set("strengths",v)} placeholder="Skills, achievements..."/><Btn t={th} onClick={generate} icon="sparkle" style={{width:"100%"}} disabled={loading}>{loading?"Generating...":"Generate Letter"}</Btn></Card><Card t={th}><h3 style={{color:th.text,marginTop:0}}>📄 Result</h3>{gen?<><div style={{background:th.surface,borderRadius:"12px",padding:"18px",maxHeight:"500px",overflowY:"auto",whiteSpace:"pre-wrap",color:th.text,lineHeight:1.7,fontSize:"14px"}}>{gen}</div><div style={{display:"flex",gap:"8px",marginTop:"12px"}}><Btn t={th} small v="secondary" onClick={()=>navigator.clipboard?.writeText(gen)}>Copy</Btn><Btn t={th} small v="ghost" onClick={()=>setGen("")} icon="x">Clear</Btn></div></>:<div style={{textAlign:"center",padding:"60px 20px",color:th.muted}}><div style={{fontSize:"48px",marginBottom:"12px"}}>✨</div><p>Fill in details and generate your letter.</p></div>}</Card></div></div>;
-}
+const authCard = {
+  width: "100%",
+  maxWidth: 400,
+  background: "#fff",
+  padding: 30,
+  borderRadius: 12,
+  boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: 16,
+};
 
-// --- RESUME BUILDER ---
-function ResumeBuilder({t:th,profile,setProfile}){
-  const[form,setForm]=useState({name:profile.name||"",email:profile.email||"",phone:profile.phone||"",summary:"",education:profile.education||"",experience:profile.experience||"",skills:profile.skills||"",achievements:profile.achievements||"",languages:profile.languages||"",interests:profile.interests||""});
-  const[gen,setGen]=useState(false);const set=(k,v)=>setForm({...form,[k]:v});
-  const generate=()=>{setGen(true);setProfile(p=>({...p,name:form.name||p.name,email:form.email||p.email,education:form.education||p.education,experience:form.experience||p.experience,skills:form.skills||p.skills,achievements:form.achievements||p.achievements,languages:form.languages||p.languages,interests:form.interests||p.interests,resumeText:`${form.education} ${form.experience} ${form.skills} ${form.achievements}`}))};
-  return <div><h1 style={{fontSize:"32px",fontWeight:"800",color:th.text,margin:"0 0 6px"}}>Resume Builder</h1><p style={{color:th.muted,marginBottom:"18px"}}>Build your CV — also powers school recommendations</p><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"18px"}}><Card t={th}><h3 style={{color:th.text,marginTop:0}}>📝 Your Info</h3><Inp t={th} label="Name" value={form.name} onChange={v=>set("name",v)} placeholder="Full name"/><Inp t={th} label="Email" value={form.email} onChange={v=>set("email",v)} placeholder="email@example.com"/><Inp t={th} label="Phone" value={form.phone} onChange={v=>set("phone",v)} placeholder="+1 234 567 8900"/><Inp t={th} label="Summary" value={form.summary} onChange={v=>set("summary",v)} placeholder="Brief 2-3 sentence summary..." textarea/><Inp t={th} label="Education" value={form.education} onChange={v=>set("education",v)} placeholder="BSc CS, MIT, 2024&#10;GPA: 3.8" textarea/><Inp t={th} label="Experience" value={form.experience} onChange={v=>set("experience",v)} placeholder="Intern at Google, 2023&#10;Research Assistant..." textarea/><Inp t={th} label="Skills" value={form.skills} onChange={v=>set("skills",v)} placeholder="Python, ML, Leadership..."/><Inp t={th} label="Achievements" value={form.achievements} onChange={v=>set("achievements",v)} placeholder="Dean's List, Published paper..." textarea/><Btn t={th} onClick={generate} icon="sparkle" style={{width:"100%"}}>Generate & Save to Profile</Btn></Card><Card t={th}><h3 style={{color:th.text,marginTop:0}}>📄 Preview</h3>{gen?<div style={{background:th.surface,borderRadius:"12px",padding:"24px",border:`1px solid ${th.border}`}}><div style={{textAlign:"center",borderBottom:`2px solid ${th.accent}`,paddingBottom:"12px",marginBottom:"14px"}}><h2 style={{margin:0,fontSize:"20px",color:th.text}}>{form.name||"Your Name"}</h2><div style={{color:th.muted,fontSize:"13px",marginTop:"4px"}}>{[form.email,form.phone].filter(Boolean).join(" | ")}</div></div>{form.summary&&<div style={{marginBottom:"14px"}}><h4 style={{color:th.accent,fontSize:"12px",letterSpacing:"1.5px",borderBottom:`1px solid ${th.border}`,paddingBottom:"4px",marginBottom:"6px"}}>SUMMARY</h4><p style={{color:th.textSec,fontSize:"13px",lineHeight:1.6}}>{form.summary}</p></div>}{[{l:"EDUCATION",v:form.education},{l:"EXPERIENCE",v:form.experience},{l:"SKILLS",v:form.skills},{l:"ACHIEVEMENTS",v:form.achievements},{l:"LANGUAGES",v:form.languages},{l:"INTERESTS",v:form.interests}].filter(s=>s.v).map((s,i)=><div key={i} style={{marginBottom:"12px"}}><h4 style={{color:th.accent,fontSize:"12px",letterSpacing:"1.5px",borderBottom:`1px solid ${th.border}`,paddingBottom:"4px",marginBottom:"6px"}}>{s.l}</h4><div style={{color:th.textSec,fontSize:"13px",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{s.v}</div></div>)}</div>:<div style={{textAlign:"center",padding:"60px 20px",color:th.muted}}><div style={{fontSize:"48px",marginBottom:"12px"}}>📄</div><p>Fill in your details to preview.</p><p style={{color:th.accent,fontSize:"13px",marginTop:"6px"}}>Also saves to profile for better school matching!</p></div>}</Card></div></div>;
-}
+const appWrapper = {
+  minHeight: "100vh",
+  display: "flex",
+  flexDirection: "column",
+};
 
-// --- DOCUMENT VAULT ---
-function DocVault({t:th,documents,setDocuments}){
-  const defaults=[{name:"Transcript.pdf",type:"Transcript",size:"1.2 MB",icon:"📄"},{name:"IELTS_Certificate.pdf",type:"Test Score",size:"0.8 MB",icon:"📊"},{name:"Passport_Scan.jpg",type:"ID",size:"3.1 MB",icon:"🛂"},{name:"Recommendation.pdf",type:"Reference",size:"0.5 MB",icon:"✉️"}];
-  const all=[...defaults,...documents];
-  return <div><h1 style={{fontSize:"32px",fontWeight:"800",color:th.text,margin:"0 0 20px"}}>Document Vault</h1><Card t={th} style={{marginBottom:"18px",textAlign:"center",padding:"36px",border:`2px dashed ${th.border}`,cursor:"pointer"}} onClick={()=>setDocuments(p=>[...p,{name:`Document_${p.length+1}.pdf`,type:"Upload",size:`${(Math.random()*3+0.5).toFixed(1)} MB`,icon:"📎"}])}><div style={{color:th.accent}}><I n="upload" s={36}/></div><p style={{color:th.text,fontWeight:"600",marginTop:"10px"}}>Click to upload documents</p><p style={{color:th.muted,fontSize:"13px"}}>Transcripts, certificates, test scores, passport, references</p></Card><div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px"}}>{all.map((d,i)=><Card key={i} t={th} hover><div style={{display:"flex",gap:"10px"}}><div style={{width:"40px",height:"40px",borderRadius:"10px",background:th.accent+"1A",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"18px",flexShrink:0}}>{d.icon}</div><div style={{minWidth:0}}><div style={{color:th.text,fontWeight:"600",fontSize:"14px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.name}</div><Badge t={th} color={th.purple}>{d.type}</Badge><div style={{color:th.muted,fontSize:"11px",marginTop:"4px"}}>{d.size}</div></div></div></Card>)}</div></div>;
-}
+const headerStyle = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: "10px 20px",
+  borderBottom: "1px solid #ddd",
+};
 
-// --- AI ADVISOR ---
-function AIAdvisor({t:th,profile,getRec}){
-  const[msgs,setMsgs]=useState([{role:"ai",text:`Hey${profile.name?` ${profile.name}`:""}! I'm your UniScout advisor. Ask me anything about schools, scholarships, visas, or applications. No agent fees — just straight answers.`}]);
-  const[input,setInput]=useState("");const[typing,setTyping]=useState(false);const chatEnd=useRef(null);
-  useEffect(()=>{chatEnd.current?.scrollIntoView({behavior:"smooth"})},[msgs]);
-  const respond=(q)=>{const ql=q.toLowerCase();const rec=getRec().slice(0,3);
-    if(ql.includes("budget")||ql.includes("cheap")||ql.includes("free")||ql.includes("afford"))return `Best affordable options:\n\n🇩🇪 TU Munich — Tuition is FREE (€0). Only €144/semester.\n🇿🇦 University of Cape Town — ~$3,500-$5,100 USD/year\n🇨🇭 ETH Zurich — ~$1,600 USD/year for a top-7 university!\n\nFor full rides: Chevening (UK), DAAD (Germany), Mastercard Foundation, and Erasmus Mundus all cover everything.`;
-    if(ql.includes("scholarship")||ql.includes("funding"))return `Your best scholarship options:\n\n🏆 Full Rides:\n• Chevening (UK) — Full tuition + £1,133/mo. Needs 2+ years experience\n• DAAD (Germany) — €934/month + travel\n• Commonwealth — Full tuition + flights + stipend\n• Mastercard Foundation — Everything covered, for African students\n• Fulbright (USA) — Full funding\n\n📧 Apply DIRECTLY through their websites. NEVER pay an agent.`;
-    if(ql.includes("recommend")||ql.includes("which")||ql.includes("best"))return `Based on your profile:\n\n${rec.map((s,i)=>`${i+1}. ${s.name} (${s.flag}) — #${s.ranking}\n   ${s.tuition} | ${s.acceptance} acceptance\n   ${s.matchScore>50?"🔥 Strong match!":s.matchScore>25?"✅ Good fit":"💡 Worth exploring"}`).join("\n\n")}\n\n${profile.course?`Matched to your interest in ${profile.course}.`:"Complete your profile for better matches."}`;
-    if(ql.includes("visa"))return `Visa processing by country:\n\n🇨🇦 Canada — 8-12 weeks, $150 CAD\n🇬🇧 UK — 3-6 weeks, £490 + NHS surcharge\n🇩🇪 Germany — 6-12 weeks, €75 (need blocked account)\n🇦🇺 Australia — 4-6 weeks, $710 AUD\n🇸🇬 Singapore — 2-4 weeks, S$60\n\n⚠️ Start your visa the MOMENT you get accepted. Check any school's Visa tab for full details.`;
-    return `I can help with:\n• 🏫 School recommendations\n• 💰 Scholarships & eligibility\n• ✈️ Visa guidance\n• 📝 Application strategy\n• ✍️ Letter feedback\n\nTry: "What schools can I afford?" or "Am I eligible for Chevening?"`;
-  };
-  const send=()=>{if(!input.trim()||typing)return;setMsgs(p=>[...p,{role:"user",text:input}]);const q=input;setInput("");setTyping(true);setTimeout(()=>{setMsgs(p=>[...p,{role:"ai",text:respond(q)}]);setTyping(false)},800+Math.random()*800)};
-  return <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 120px)"}}><h1 style={{fontSize:"32px",fontWeight:"800",color:th.text,margin:"0 0 14px"}}>AI Advisor</h1>
-    <div style={{display:"flex",gap:"6px",marginBottom:"12px",flexWrap:"wrap"}}>{["What schools fit my budget?","Best scholarships?","Visa requirements?","How to improve my application?"].map(tip=><button key={tip} onClick={()=>setInput(tip)} style={{padding:"5px 10px",borderRadius:"16px",border:`1px solid ${th.border}`,background:th.surface,color:th.muted,fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>{tip}</button>)}</div>
-    <Card t={th} style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",padding:0}}><div style={{flex:1,overflowY:"auto",padding:"18px"}}>{msgs.map((m,i)=><div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start",marginBottom:"12px"}}>{m.role==="ai"&&<div style={{width:"30px",height:"30px",borderRadius:"50%",background:`linear-gradient(135deg,${th.accent},${th.accentDark})`,display:"flex",alignItems:"center",justifyContent:"center",marginRight:"8px",flexShrink:0,fontSize:"14px"}}>🎓</div>}<div style={{maxWidth:"72%",padding:"12px 16px",borderRadius:"14px",lineHeight:1.6,fontSize:"14px",whiteSpace:"pre-wrap",wordBreak:"break-word",background:m.role==="user"?`linear-gradient(135deg,${th.accent},${th.accentDark})`:th.surface,color:m.role==="user"?"#000":th.text,borderBottomRightRadius:m.role==="user"?"4px":"14px",borderBottomLeftRadius:m.role==="ai"?"4px":"14px"}}>{m.text}</div></div>)}{typing&&<div style={{color:th.muted,fontSize:"14px",padding:"8px"}}>🎓 Thinking...</div>}<div ref={chatEnd}/></div><div style={{padding:"12px 18px",borderTop:`1px solid ${th.border}`,display:"flex",gap:"8px"}}><input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()} placeholder="Ask about schools, scholarships, visas..." style={{flex:1,padding:"12px 14px",borderRadius:"12px",border:`1px solid ${th.border}`,background:th.inputBg,color:th.text,fontSize:"15px",fontFamily:"inherit",outline:"none"}}/><Btn t={th} onClick={send} icon="send" disabled={typing}>Send</Btn></div></Card></div>;
-}
+const mainStyle = {
+  flex: 1,
+  padding: 20,
+  display: "flex",
+  flexDirection: "column",
+  gap: 16,
+};
 
-// --- PROFILE ---
-function ProfilePage({t:th,profile,setProfile}){
-  const[saved,setSaved]=useState(false);const set=(k,v)=>setProfile(p=>({...p,[k]:v}));
-  const save=()=>{setProfile(p=>({...p,resumeText:[p.education,p.experience,p.skills,p.achievements,p.interests].filter(Boolean).join(" ")}));setSaved(true);setTimeout(()=>setSaved(false),3000)};
-  const filled=[profile.name,profile.course,profile.country,profile.level,profile.gpa,profile.budget,profile.education,profile.experience,profile.skills,profile.achievements].filter(Boolean).length;
-  const pct=Math.round((filled/10)*100);
-  return <div><h1 style={{fontSize:"32px",fontWeight:"800",color:th.text,margin:"0 0 6px"}}>My Profile</h1><p style={{color:th.muted,marginBottom:"18px"}}>The more you fill in, the better your recommendations</p>
-    <Card t={th} style={{marginBottom:"18px",padding:"18px"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}><span style={{color:th.text,fontWeight:"600"}}>Profile Completeness</span><span style={{color:pct===100?th.success:th.accent,fontWeight:"700"}}>{pct}%</span></div><div style={{height:"8px",borderRadius:"4px",background:th.border}}><div style={{height:"100%",borderRadius:"4px",width:`${pct}%`,background:pct===100?th.success:`linear-gradient(90deg,${th.accent},${th.accentLight})`,transition:"width 0.5s"}}/></div></Card>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"18px"}}><Card t={th}><h3 style={{color:th.text,marginTop:0}}>👤 Personal</h3><Inp t={th} label="Name" value={profile.name} onChange={v=>set("name",v)} placeholder="Full name"/><Inp t={th} label="Age" value={profile.age} onChange={v=>set("age",v)} placeholder="22" type="number"/><Inp t={th} label="Email" value={profile.email} onChange={v=>set("email",v)} placeholder="email@example.com"/><Inp t={th} label="Nationality" value={profile.nationality} onChange={v=>set("nationality",v)} placeholder="e.g. Nigerian"/><Inp t={th} label="Education Level" value={profile.level} onChange={v=>set("level",v)} options={["High School","Bachelor's","Master's","PhD"]}/></Card>
-    <Card t={th}><h3 style={{color:th.text,marginTop:0}}>🎯 Preferences</h3><Inp t={th} label="Desired Course" value={profile.course} onChange={v=>set("course",v)} placeholder="Computer Science, Medicine..."/><Inp t={th} label="Preferred Country" value={profile.country} onChange={v=>set("country",v)} options={COUNTRIES}/><Inp t={th} label="Annual Budget" value={profile.budget} onChange={v=>set("budget",v)} placeholder="$20,000 USD"/><Inp t={th} label="GPA / Grades" value={profile.gpa} onChange={v=>set("gpa",v)} placeholder="3.5/4.0, 75%, First Class"/></Card>
-    <Card t={th} style={{gridColumn:"1/-1"}}><h3 style={{color:th.text,marginTop:0}}>📄 Your Resume <Badge t={th} color={th.accent}>Powers recommendations</Badge></h3><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"}}><div><Inp t={th} label="Education" value={profile.education} onChange={v=>set("education",v)} placeholder="BSc CS, MIT, 2024" textarea/><Inp t={th} label="Experience" value={profile.experience} onChange={v=>set("experience",v)} placeholder="Intern at Google, Research at MIT..." textarea/></div><div><Inp t={th} label="Skills" value={profile.skills} onChange={v=>set("skills",v)} placeholder="Python, ML, Leadership..."/><Inp t={th} label="Achievements" value={profile.achievements} onChange={v=>set("achievements",v)} placeholder="Dean's List, Publications..." textarea/><Inp t={th} label="Interests" value={profile.interests} onChange={v=>set("interests",v)} placeholder="AI, Open Source, Basketball..."/></div></div></Card></div>
-    <div style={{marginTop:"18px"}}><Btn t={th} icon="check" onClick={save}>{saved?"✅ Saved!":"Save Profile"}</Btn>{saved&&<span style={{color:th.success,fontSize:"14px",fontWeight:"600",marginLeft:"12px"}}>Recommendations updated!</span>}</div>
-  </div>;
-}
+const inputStyle = {
+  width: "100%",
+  padding: 10,
+  marginBottom: 10,
+  borderRadius: 8,
+  border: "1px solid #ccc",
+};
 
-// --- POST-ACCEPTANCE ---
-function PostAccept({t:th}){
-  const[country,setCountry]=useState("");const[checked,setChecked]=useState({});
-  const list=CHECKLISTS[country]||[];const done=list.filter((_,i)=>checked[`${country}-${i}`]).length;
-  return <div><h1 style={{fontSize:"32px",fontWeight:"800",color:th.text,margin:"0 0 6px"}}>Post-Acceptance Checklist</h1><p style={{color:th.muted,marginBottom:"16px"}}>You got in! Here's everything to do before you arrive.</p>
-    <div style={{display:"flex",gap:"6px",marginBottom:"16px",flexWrap:"wrap"}}>{Object.keys(CHECKLISTS).map(c=><Btn key={c} t={th} small v={country===c?"primary":"ghost"} onClick={()=>setCountry(c)}>{c}</Btn>)}</div>
-    {country?<><Card t={th} style={{marginBottom:"16px",padding:"16px"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:"6px"}}><span style={{color:th.text,fontWeight:"600"}}>{country}</span><span style={{color:done===list.length?th.success:th.accent,fontWeight:"700"}}>{done}/{list.length}</span></div><div style={{height:"8px",borderRadius:"4px",background:th.border}}><div style={{height:"100%",borderRadius:"4px",width:`${(done/list.length)*100}%`,background:done===list.length?th.success:`linear-gradient(90deg,${th.accent},${th.accentLight})`,transition:"width 0.4s"}}/></div></Card>
-    <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>{list.map((item,i)=>{const ck=checked[`${country}-${i}`];return <div key={i} onClick={()=>setChecked(p=>({...p,[`${country}-${i}`]:!p[`${country}-${i}`]}))} style={{display:"flex",alignItems:"center",gap:"12px",padding:"12px 16px",background:th.card,borderRadius:"10px",border:`1px solid ${ck?th.success+"44":th.border}`,cursor:"pointer",opacity:ck?0.7:1}}><div style={{width:"22px",height:"22px",borderRadius:"6px",border:`2px solid ${ck?th.success:th.border}`,background:ck?th.success:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{ck&&<I n="check" s={12} c="#fff"/>}</div><span style={{color:ck?th.muted:th.text,fontSize:"14px",textDecoration:ck?"line-through":"none"}}>{item}</span></div>})}</div></>
-    :<Card t={th} style={{textAlign:"center",padding:"60px"}}><div style={{fontSize:"48px",marginBottom:"14px"}}>✅</div><h3 style={{color:th.text}}>Select a country above</h3></Card>}
-  </div>;
-}
+const textareaStyle = {
+  width: "100%",
+  minHeight: 120,
+  padding: 12,
+  borderRadius: 8,
+  border: "1px solid #ccc",
+  resize: "vertical",
+};
 
-// ============================================================
-// MAIN APP
-// ============================================================
-const NAV=[
-  {id:"dashboard",l:"Dashboard",i:"home"},{id:"schools",l:"Explore Schools",i:"school"},
-  {id:"scholarships",l:"Scholarships",i:"award"},{id:"tracker",l:"Applications",i:"calendar"},
-  {id:"compare",l:"Compare",i:"compare"},{id:"letters",l:"Letter Drafter",i:"doc"},
-  {id:"resume",l:"Resume Builder",i:"resume"},{id:"vault",l:"Documents",i:"upload"},
-  {id:"advisor",l:"AI Advisor",i:"chat"},{id:"postaccept",l:"Post-Acceptance",i:"checklist"},
-  {id:"profile",l:"My Profile",i:"user"},
-];
+const buttonStyle = {
+  padding: 12,
+  borderRadius: 8,
+  border: "none",
+  background: "#2563eb",
+  color: "#fff",
+  cursor: "pointer",
+};
 
-export default function App(){
-  const[mode,setMode]=useState(()=>{try{return localStorage.getItem('us-theme')||'dark'}catch{return'dark'}});
-  const[page,setPage]=useState("dashboard");
-  const[selSchool,setSelSchool]=useState(null);
-  const[profile,setProfile]=useState(()=>{try{const s=localStorage.getItem('us-profile');return s?JSON.parse(s):{name:"",age:"",nationality:"",level:"",course:"",country:"",budget:"",gpa:"",email:"",phone:"",education:"",experience:"",skills:"",achievements:"",languages:"",interests:"",resumeText:""}}catch{return{name:"",age:"",nationality:"",level:"",course:"",country:"",budget:"",gpa:"",email:"",phone:"",education:"",experience:"",skills:"",achievements:"",languages:"",interests:"",resumeText:""}}});
-  const[savedSchools,setSavedSchools]=useState(()=>{try{const s=localStorage.getItem('us-saved');return s?JSON.parse(s):[]}catch{return[]}});
-  const[apps,setApps]=useState(()=>{try{const a=localStorage.getItem('us-apps');return a?JSON.parse(a):[]}catch{return[]}});
-  const[docs,setDocs]=useState([]);
-  const[sidebar,setSidebar]=useState(true);
-  const th=T[mode];
+const navBtn = {
+  marginLeft: 10,
+  padding: 8,
+  borderRadius: 6,
+  border: "none",
+  cursor: "pointer",
+};
 
-  useEffect(()=>{try{localStorage.setItem('us-theme',mode)}catch{}},[mode]);
-  useEffect(()=>{try{localStorage.setItem('us-profile',JSON.stringify(profile))}catch{}},[profile]);
-  useEffect(()=>{try{localStorage.setItem('us-saved',JSON.stringify(savedSchools))}catch{}},[savedSchools]);
-  useEffect(()=>{try{localStorage.setItem('us-apps',JSON.stringify(apps))}catch{}},[apps]);
-
-  const getRec=useCallback(()=>{
-    let scored=SCHOOLS.map(s=>{let sc=0;
-      if(profile.course){const c=profile.course.toLowerCase();if(s.programs.some(p=>p.toLowerCase().includes(c)))sc+=30;if(s.strengths?.some(x=>x.toLowerCase().includes(c)))sc+=15}
-      if(profile.country&&s.country===profile.country)sc+=25;
-      if(profile.skills){profile.skills.toLowerCase().split(/[,;]+/).map(x=>x.trim()).forEach(skill=>{if(s.programs.some(p=>p.toLowerCase().includes(skill)))sc+=10})}
-      if(profile.experience){const e=profile.experience.toLowerCase();s.programs.forEach(p=>{if(e.includes(p.toLowerCase().split(' ')[0]))sc+=8})}
-      if(profile.budget){const b=parseInt(profile.budget.replace(/[^0-9]/g,''));if(b&&b<10000&&s.tuition.includes('€0'))sc+=20;if(b&&b<10000&&s.country==='South Africa')sc+=15}
-      sc+=Math.max(0,(200-s.ranking)/10);return{...s,matchScore:sc}});
-    scored.sort((a,b)=>b.matchScore-a.matchScore);return scored;
-  },[profile]);
-
-  const props={t:th,setPage,setSelectedSchool:setSelSchool,profile,setProfile,savedSchools,setSavedSchools,applications:apps,setApplications:setApps,documents:docs,setDocuments:setDocs,getRec};
-
-  const renderPage=()=>{switch(page){
-    case"dashboard":return<Dashboard {...props}/>;case"schools":return<SchoolsPage {...props}/>;
-    case"detail":return<SchoolDetail school={selSchool} {...props}/>;case"scholarships":return<ScholarshipsPage {...props}/>;
-    case"tracker":return<AppTracker {...props}/>;case"compare":return<ComparePage {...props}/>;
-    case"letters":return<LetterDrafter {...props}/>;case"resume":return<ResumeBuilder {...props}/>;
-    case"vault":return<DocVault {...props}/>;case"advisor":return<AIAdvisor {...props}/>;
-    case"postaccept":return<PostAccept {...props}/>;case"profile":return<ProfilePage {...props}/>;
-    default:return<Dashboard {...props}/>}};
-
-  return <div style={{display:"flex",height:"100vh",background:th.bg,fontFamily:"'DM Sans',-apple-system,sans-serif",color:th.text,overflow:"hidden",transition:"background 0.3s"}}>
-    {/* SIDEBAR */}
-    <div style={{width:sidebar?"250px":"68px",background:th.card,borderRight:`1px solid ${th.border}`,display:"flex",flexDirection:"column",transition:"width 0.3s",flexShrink:0,overflow:"hidden"}}>
-      <div style={{padding:"14px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${th.border}`,minHeight:"58px"}}>
-        <div style={{display:"flex",alignItems:"center",gap:"10px"}}><div style={{width:"34px",height:"34px",borderRadius:"10px",background:`linear-gradient(135deg,${th.accent},${th.accentDark})`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:"16px"}}>🎓</div>{sidebar&&<span style={{fontWeight:"800",fontSize:"18px",color:th.text}}>UniScout</span>}</div>
-        {sidebar&&<button onClick={()=>setMode(m=>m==='dark'?'light':'dark')} style={{background:th.surface,border:`1px solid ${th.border}`,borderRadius:"8px",width:"34px",height:"34px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:th.accent}} title="Toggle theme"><I n={mode==='dark'?'sun':'moon'} s={15}/></button>}
-      </div>
-      <nav style={{flex:1,padding:"6px",overflowY:"auto"}}>{NAV.map(item=>{const active=page===item.id||(page==="detail"&&item.id==="schools");return<button key={item.id} onClick={()=>setPage(item.id)} style={{width:"100%",display:"flex",alignItems:"center",gap:"10px",padding:sidebar?"9px 12px":"9px 0",justifyContent:sidebar?"flex-start":"center",background:active?th.accent+"18":"transparent",border:"none",borderRadius:"8px",cursor:"pointer",color:active?th.accent:th.muted,fontWeight:active?"700":"500",fontSize:"13px",fontFamily:"inherit",marginBottom:"1px",transition:"all 0.2s"}}><I n={item.i} s={17}/>{sidebar&&item.l}</button>})}</nav>
-      <div style={{borderTop:`1px solid ${th.border}`,padding:"6px"}}>{!sidebar&&<button onClick={()=>setMode(m=>m==='dark'?'light':'dark')} style={{width:"100%",background:"transparent",border:"none",color:th.accent,cursor:"pointer",padding:"8px 0",display:"flex",justifyContent:"center"}}><I n={mode==='dark'?'sun':'moon'} s={16}/></button>}<button onClick={()=>setSidebar(!sidebar)} style={{width:"100%",padding:"8px",border:"none",background:"transparent",color:th.muted,cursor:"pointer",fontSize:"12px",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:"4px"}}>{sidebar?<><I n="back" s={12}/> Collapse</>:<I n="arrow" s={12}/>}</button></div>
-    </div>
-    {/* MAIN */}
-    <div style={{flex:1,overflowY:"auto",padding:"26px 34px"}}>{renderPage()}</div>
-  </div>;
-}
+const outputStyle = {
+  whiteSpace: "pre-wrap",
+};
